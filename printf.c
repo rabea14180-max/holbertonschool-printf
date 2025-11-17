@@ -1,10 +1,12 @@
 #include "main.h"
 #include <stdarg.h>
+
 int _printf(const char *format, ...)
 {
 va_list args;
-int i = 0, j, count = 0;
+int i = 0, count = 0, j;
 char *str;
+
 if (!format)
 return (-1);
 va_start(args, format);
@@ -16,7 +18,7 @@ else
 {
 i++;
 if (!format[i])
-return (-1)
+return (-1);
 if (format[i] == 'c')
 count += _putchar(va_arg(args, int));
 else if (format[i] == 's')
