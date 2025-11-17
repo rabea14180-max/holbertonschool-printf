@@ -1,128 +1,74 @@
-#include <stdarg.h>
 #include "main.h"
+#include <stdarg.h>
 
 /**
- * print_char - print single char using _putchar
- * @c: char to print
+ * _printf - produces output according to a format
+ * @format: character string containing directives
  *
- * Return: number of chars printed (1) or -1 on error
- */
-int print_char(char c)
-{
-    int r = _putchar(c);
-    if (r < 0)
-        return -1;
-    return 1;
-}
-
-/**
- * print_string - print a C string using _putchar
- * @s: string to print (may be NULL)
- *
- * Return: number of characters printed, or -1 on error
- */
-int print_string(const char *s)
-{
-    int count = 0;
-
-    if (s == NULL)
-        s = "(null)"; /* or "(nil)" depending on spec */
-
-    while (*s)
-    {
-        if (_putchar(*s) < 0)
-            return -1;
-        count++;
-        s++;
-    }
-    return count;
-}
-
-/**
- * _printf - minimal printf supporting %c, %s and %%
- * @format: format string
- *
- * Return: number of characters printed (excluding terminating null),
- *         or -1 on error (e.g., format == NULL or write error or stray % at end)
+ * Return: number of characters printed
  */
 int _printf(const char *format, ...)
 {
 va_list args;
-int total = 0;
-int res;
+int i = 0, count = 0;
 
 if (format == NULL)
-return -1;
+return (-1);
 
 va_start(args, format);
-while (*format)
-{
-if (*format != '%')
-{
-if (_putchar(*format) < 0)
-{
-va_end(args);
-return -1;
-}
-total++;
-format++;
-continue;
-}
 
-
-format++;
-
-
-if (*format == '\0')
+while (format[i])
 {
-            va_end(args);
-return -1;
-}
-
-if (*format == 'c')
+if (format[i] != '%')
 {
-int ch = va_arg(args, int); /* char promoted to int
-res = print_char((char)ch);
-if (res < 0)
-{
-va_end(args);
-return -1;
-}
-total += res;
-}
-else if (*format == 's')
-{
-const char *s = va_arg(args, const char *);
-res = print_string(s);
-if (res < 0)
-            {
-va_end(args);
-return -1;
-}
-total += res;
-}
-else if (*format == '%')
-{
-if (_putchar('%') < 0)
-{
-va_end(args);
-return -1;
-}
-total++;
+_putchar(format[i]);
+count++;
 }
 else
 {
-if (_putchar('%') < 0 || _putchar(*format) < 0)
+i++;
+
+if (format[i] == '\0')
+return (-1);
+
+if (format[i] == 'c')
 {
-va_end(args);
-return -1;
+char c = va_arg(args, int);
+_putchar(c);
+count++;
 }
-total += 2;
+else if (format[i] == 's')
+{
+char *str = va_arg(args, char *);
+int j = 0;
+
+if (str == NULL)
+str = "(null)";
+
+while (str[j])
+{
+_putchar(str[j]);
+count++;
+j++;
+}
+}
+else if (format[i] == '%')
+{
+_putchar('%');
+count++;
+}
+else
+{
+
+_putchar('%');
+_putchar(format[i]);
+count += 2;
+}
+}
+i++;
 }
 
-format++;
+va_end(args);
+return (count);
 }
 
-va_end(args);
-return total;
-}
