@@ -1,43 +1,128 @@
+#include <stdarg.h>
 #include "main.h"
+
 /**
-* printf-praduces out put accourding to a format
-* @fotmat :format string containing format specifiers
-* return:numbr of characters printed (excluding nall by te )
-*/
+ * print_char - print single char using _putchar
+ * @c: char to print
+ *
+ * Return: number of chars printed (1) or -1 on error
+ */
+int print_char(char c)
+{
+    int r = _putchar(c);
+    if (r < 0)
+        return -1;
+    return 1;
+}
 
-int -print (const char *format,...)
-va-list args;
-int count =0;
-if (!format ||(format[0]=='%' &&format[1]=='\0'))
-return (-1)
+/**
+ * print_string - print a C string using _putchar
+ * @s: string to print (may be NULL)
+ *
+ * Return: number of characters printed, or -1 on error
+ */
+int print_string(const char *s)
+{
+    int count = 0;
 
-va _start (arg,format);
-while (*formar)
+    if (s == NULL)
+        s = "(null)"; /* or "(nil)" depending on spec */
 
-if (*format =='%')
+    while (*s)
+    {
+        if (_putchar(*s) < 0)
+            return -1;
+        count++;
+        s++;
+    }
+    return count;
+}
 
-format ++;
+/**
+ * _printf - minimal printf supporting %c, %s and %%
+ * @format: format string
+ *
+ * Return: number of characters printed (excluding terminating null),
+ *         or -1 on error (e.g., format == NULL or write error or stray % at end)
+ */
+int _printf(const char *format, ...)
+{
+va_list args;
+int total = 0;
+int res;
+
+if (format == NULL)
+return -1;
+
+va_start(args, format);
+while (*format)
+{
+if (*format != '%')
+{
+if (_putchar(*format) < 0)
+{
+va_end(args);
+return -1;
+}
+total++;
+format++;
+continue;
+}
+
+
+format++;
+
+
 if (*format == '\0')
-return (-1)
+{
+            va_end(args);
+return -1;
+}
+
 if (*format == 'c')
-
-count += _put char (va-arg(args ,int));
-else if (*format =='s')
-count + = print_string(va_va arg(args,char)
-else if (*format =='%')
-counr + = _putchar ('%')
-else if (*format=='d' ||*format =='i')
-count + = print _numbr (va_arg(args , int))
+{
+int ch = va_arg(args, int); /* char promoted to int
+res = print_char((char)ch);
+if (res < 0)
+{
+va_end(args);
+return -1;
+}
+total += res;
+}
+else if (*format == 's')
+{
+const char *s = va_arg(args, const char *);
+res = print_string(s);
+if (res < 0)
+            {
+va_end(args);
+return -1;
+}
+total += res;
+}
+else if (*format == '%')
+{
+if (_putchar('%') < 0)
+{
+va_end(args);
+return -1;
+}
+total++;
+}
 else
-count + =_putchar ('%');
+{
+if (_putchar('%') < 0 || _putchar(*format) < 0)
+{
+va_end(args);
+return -1;
+}
+total += 2;
+}
 
-count + = _put char (*format);
+format++;
+}
 
-
-else
-count + = _putchar (*format);
-
-format + + ;
-
-va_end (args);
-return (count);
+va_end(args);
+return total;
+}
