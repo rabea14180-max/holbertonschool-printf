@@ -1,10 +1,10 @@
 #include "main.h"
 
 /**
- * print_int - prints a signed integer
- * @args: argument list
+ * print_int - prints a signed integer using _putchar
+ * @args: argument list containing the integer to print
  *
- * Return: number of characters printed
+ * Return: number of characters printed (including sign if negative)
  */
 int print_int(va_list args)
 {
@@ -21,9 +21,10 @@ int print_int(va_list args)
 	{
 		_putchar('-');
 		count++;
-
-		/* Cast to long to safely handle INT_MIN before converting to unsigned */
-	
+		/*
+		 * Cast to long before negating to safely handle INT_MIN,
+		 * then convert the positive value to unsigned int.
+		 */
 		num = (unsigned int)(-(long)n);
 	}
 	else
@@ -32,13 +33,14 @@ int print_int(va_list args)
 	}
 
 	i = 0;
-
+	/* Store digits in reverse order in buffer */
 	do {
-		buffer[i++] = (char)((num % 10) + '0');
+		buffer[i] = (char)((num % 10) + '0');
+		i++;
 		num /= 10;
 	} while (num > 0);
 
-
+	/* Print digits in the correct order */
 	while (i > 0)
 	{
 		i--;
@@ -61,6 +63,7 @@ int print_char(va_list args)
 
 	c = (char)va_arg(args, int);
 	_putchar(c);
+
 	return (1);
 }
 
@@ -93,8 +96,10 @@ int print_string(va_list args)
 int print_percent(void)
 {
 	_putchar('%');
+
 	return (1);
 }
+
 /**
  * _printf - produces output according to a format
  * @format: format string containing characters and specifiers
@@ -124,4 +129,42 @@ int _printf(const char *format, ...)
 			{
 				va_end(args);
 				return (-1);
+			}
+
+			if (format[i] == 'c')
+			{
+				count += print_char(args);
+			}
+			else if (format[i] == 's')
+			{
+				count += print_string(args);
+			}
+			else if (format[i] == '%')
+			{
+				count += print_percent();
+			}
+			else if (format[i] == 'd' || format[i] == 'i')
+			{
+				count += print_int(args);
+			}
+			else
+			{
+				/*
+				 * For unsupported specifiers, print the
+				 * percent sign and the character as-is.
+				 */
+				_putchar('%');
+				_putchar(format[i]);
+				count += 2;
+			}
+		}
+		else
+		{
+			_putchar(format[i]);
+			count++;
+		}
+	}
+
+	va_end(args);
+	return (count);
 }
