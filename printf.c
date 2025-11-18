@@ -48,3 +48,50 @@ int print_int(va_list args)
 
 	return (count);
 }
+
+/**
+ * print_char - prints a character
+ * @args: argument list
+ *
+ * Return: number of characters printed (1)
+ */
+int print_char(va_list args)
+{
+	char c;
+
+	c = (char)va_arg(args, int);
+	_putchar(c);
+	return (1);
+}
+
+/**
+ * print_string - prints a string
+ * @args: argument list
+ *
+ * Return: number of characters printed
+ */
+int print_string(va_list args)
+{
+	char *str;
+	int i;
+
+	str = va_arg(args, char *);
+	if (str == NULL)
+		str = "(null)";
+
+	for (i = 0; str[i] != '\0'; i++)
+		_putchar(str[i]);
+
+	return (i);
+}
+
+/**
+ * print_percent - prints the character '%'
+ *
+ * Return: number of characters printed (1)
+ */
+int print_percent(void)
+{
+	_putchar('%');
+	return (1);
+}
