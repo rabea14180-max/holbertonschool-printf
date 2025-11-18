@@ -21,6 +21,8 @@ int print_int(va_list args)
 	{
 		_putchar('-');
 		count++;
+
+		/* Cast to long to safely handle INT_MIN before converting to unsigned */
 	
 		num = (unsigned int)(-(long)n);
 	}
