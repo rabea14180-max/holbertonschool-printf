@@ -95,3 +95,33 @@ int print_percent(void)
 	_putchar('%');
 	return (1);
 }
+/**
+ * _printf - produces output according to a format
+ * @format: format string containing characters and specifiers
+ *
+ * Return: number of characters printed (excluding the null byte),
+ *         or -1 if format is NULL or if an incomplete
+ *         format specifier is found.
+ */
+int _printf(const char *format, ...)
+{
+	va_list args;
+	int i;
+	int count;
+
+	if (format == NULL)
+		return (-1);
+
+	va_start(args, format);
+	count = 0;
+
+	for (i = 0; format[i] != '\0'; i++)
+	{
+		if (format[i] == '%')
+		{
+			i++;
+			if (format[i] == '\0')
+			{
+				va_end(args);
+				return (-1);
+}
