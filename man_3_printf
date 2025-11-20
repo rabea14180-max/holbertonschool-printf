@@ -1,0 +1,214 @@
+.\" This is a simple manual page for printf function
+.TH _PRINTF 3 "18-11-2025" "printf project" "Basic library function"
+.SH NAME
+_Printf \- writes a formatted output
+.SH LIBRARY
+Not part of standard C library
+.SH SYNOPSIS
+.B #include "main.h"
+.PP
+.BI "int _printf(const char *" format ", ...);"
+.SH DESCRIPTION
+The
+.B _printf()
+function is a simple  function that tries to act like the standard
+.BR printf (3)
+function, but in a smaller and simpler way. It is part of the printf project 
+and it is not the real function from the C library. It sends output
+to the standard output (stdout) and provides the number of characters
+that it printed.
+.PP
+The first argument to
+.B _printf()
+is a format string. This format string can contain normal characters
+and also special characters that start with a percent sign (%). The
+normal characters are printed exactly as they are. When the function
+finds a percent sign, it looks at the next character to decide how to
+handle it and which extra argument to read.
+.PP
+.B _printf()
+can also take unlimited number of arguments with different data types by using the
+.B variadic() 
+function. In each call,
+.B _printf()
+uses 
+.B variadic()
+function to deal with different numbers of arguments. It creates
+.BR va_list ,
+to read these arguments,
+and
+.BI va_start (args, format)
+to initialize it. Then it uses
+.BI va_arg (args, type)
+each time to get the next value. When all the arguments finished, it calls
+.BI va_end (args)
+to clean up.
+.PP
+The
+.B _printf()
+does not print everything by itself. It goes through the format string
+one character at a time. When it sees a normal character, it sends it
+directly to
+.BR _putchar()
+and increases an internal counter that tracks the total number of characters printed.
+When it sees a percent sign (%), it looks at the next
+character and chooses a suitable helper function such as
+.BR print_char() ,
+.BR print_string() ,
+.BR print_percent()
+or
+.BR print_int()
+depending on the conversion specifier. Each helper function prints
+its part of the output using
+.BR _putchar()
+and returns the count of characters written, and then
+.B _printf()
+adds this number to the total count.
+.PP
+This basic 
+.B _printf()
+function only supports a small set of conversion
+specifiers. Anything else starting with % is not supported and
+.B _printf()
+will just print the percent sign and the next character.
+.PP
+The supported conversion specifiers are:
+.TP
+.B %c
+Prints a single character. The corresponding argument is taken as an
+.IR int ,
+and it is converted to char before printing. Only one
+character is printed.
+.TP
+.B %s
+Prints a string of characters that ends with ('\\0'). The
+corresponding argument is a pointer to
+.IR char .
+The function prints the characters in the string one by one until it
+reaches the end of the string. If the pointer is
+.BR NULL ,
+the function prints "(null)".
+.TP
+.B %%
+Prints a single percent sign. This is useful when the user wants to print a %
+character.
+.TP
+.B %d
+Prints a signed decimal integer. The corresponding argument is of type
+.IR int .
+If the number is negative, the function first prints a minus sign and
+then prints the absolute value of the number as digits from 0 to 9.
+.TP
+.B %i
+Behaves the same as
+.BR %d .
+It also prints a signed decimal integer using an
+.IR int
+argument.
+.PP
+If the character after the percent sign is not one of the supported
+specifiers, the function prints the percent sign and that character as they are. 
+This means that a format like "%q" will be printed as "%q" in the
+output.
+.PP
+The 
+.B _printf()
+function does not support specifiers like field width, precision or length
+modifiers as they are not required for this project.
+Only the basic forms
+.BR %c ,
+.BR %s ,
+.BR %% ,
+.BR %d
+and
+.BR %i
+are supported.
+.PP
+The
+.B _printf()
+function uses
+.BR _putchar()
+to send one character at a time to the 
+.IR stdout . 
+The
+.B _putchar()
+function calls the
+.BR write (2)
+system call with 
+.IR stdout . 
+The characters printed by the helper functions are counted, 
+and the total count is returned.
+If the
+.I format
+pointer is
+.BR NULL ,
+or if a percent sign appears at the end of the format string
+without a valid specifier after it, the function does not print a
+normal result and returns
+.BR -1
+to indicate an error. In all other supported cases it returns the
+number of characters that were actually printed.
+.SH RETURN VALUE
+Upon successful, 
+.B _printf()
+returns the number of bytes printed 
+(excluding the null byte used to end output to strings).
+.PP
+On error, a negative value is returned, and
+.B -1 
+is set to indicate the error.
+.SH ERRORS
+The following errors may occur:
+.IP \[bu] 2
+The
+.I format
+pointer is
+.BR NULL .
+.IP \[bu] 2
+A percent character ('%') appears at the end of the format
+string without a following conversion specifier.
+.SH STANDARDS
+The
+.B _printf()
+function is specific for printf project and is not part of
+any standard.
+.SH HISTORY
+The first version of
+.B _printf()
+function was developed according to task 0 requirements of printf project.
+It supports the basic conversion specifiers (%c, %s and %%).
+.PP
+The second version of
+.B _printf()
+function was updated according to task 1 requirements to support integers using the %d and %i specifiers.
+.SH CAVEATS
+.BR _printf()
+does not support all format specifiers that are supported by real
+.BR printf (3)
+function such as %f, %x, %u, and %p.
+When unsupported conversion specifiers passed to
+.BR _printf() 
+the percent sign and the following character will be printed as it is,
+which means the program will work without an error but will not give the expected output.
+.SH BUGS
+.BR _printf() 
+has not been tested for possible bugs.
+.SH EXAMPLES
+.nf
+#include "main.h"
+int main(void)
+{
+    _printf("Single character: %c\\n", 'C');
+    _printf("Massage: %s\\n", "Hello, World");
+    _printf("Percent sign: %%\\n");
+    _printf("Number: %d\\n", 1911);
+    _printf("Signed number: %i\\n", -25);
+    return (0);
+}
+.fi
+.SH SEE ALSO
+.BR printf (3),
+.BR write (2),
+.BR stdarg (3)
+.SH AUTHORS
+Written by Moudhi Almutlaq and Rabea Thabit 
