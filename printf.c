@@ -137,6 +137,164 @@ int print_binary(va_list args)
 }
 
 /**
+ * print_unsigned - prints an unsigned int in decimal
+ * @args: argument list containing the unsigned int to print
+ *
+ * Return: number of characters printed
+ */
+int print_unsigned(va_list args)
+{
+	unsigned int n;
+	char buffer[12];
+	int i, count;
+
+	n = va_arg(args, unsigned int);
+
+	if (n == 0)
+	{
+		_putchar('0');
+		return (1);
+	}
+
+	i = 0;
+	while (n > 0 && i < 12)
+	{
+		buffer[i] = (char)((n % 10) + '0');
+		n /= 10;
+		i++;
+	}
+
+	count = 0;
+	while (i > 0)
+	{
+		i--;
+		_putchar(buffer[i]);
+		count++;
+	}
+
+	return (count);
+}
+
+/**
+ * print_octal - prints an unsigned int in octal
+ * @args: argument list containing the unsigned int to print
+ *
+ * Return: number of characters printed
+ */
+int print_octal(va_list args)
+{
+	unsigned int n;
+	char buffer[32];
+	int i, count;
+
+	n = va_arg(args, unsigned int);
+
+	if (n == 0)
+	{
+		_putchar('0');
+		return (1);
+	}
+
+	i = 0;
+	while (n > 0 && i < 32)
+	{
+		buffer[i] = (char)((n % 8) + '0');
+		n /= 8;
+		i++;
+	}
+
+	count = 0;
+	while (i > 0)
+	{
+		i--;
+		_putchar(buffer[i]);
+		count++;
+	}
+
+	return (count);
+}
+
+/**
+ * print_hex_lower - prints an unsigned int in lowercase hexadecimal
+ * @args: argument list containing the unsigned int to print
+ *
+ * Return: number of characters printed
+ */
+int print_hex_lower(va_list args)
+{
+	unsigned int n;
+	char buffer[32];
+	char *digits = "0123456789abcdef";
+	int i, count;
+
+	n = va_arg(args, unsigned int);
+
+	if (n == 0)
+	{
+		_putchar('0');
+		return (1);
+	}
+
+	i = 0;
+	while (n > 0 && i < 32)
+	{
+		buffer[i] = digits[n % 16];
+		n /= 16;
+		i++;
+	}
+
+	count = 0;
+	while (i > 0)
+	{
+		i--;
+		_putchar(buffer[i]);
+		count++;
+	}
+
+	return (count);
+}
+
+/**
+ * print_hex_upper - prints an unsigned int in uppercase hexadecimal
+ * @args: argument list containing the unsigned int to print
+ *
+ * Return: number of characters printed
+ */
+int print_hex_upper(va_list args)
+{
+	unsigned int n;
+	char buffer[32];
+	char *digits = "0123456789ABCDEF";
+	int i, count;
+
+	n = va_arg(args, unsigned int);
+
+	if (n == 0)
+	{
+		_putchar('0');
+		return (1);
+	}
+
+	i = 0;
+	while (n > 0 && i < 32)
+	{
+		buffer[i] = digits[n % 16];
+		n /= 16;
+		i++;
+	}
+
+	count = 0;
+	while (i > 0)
+	{
+		i--;
+		_putchar(buffer[i]);
+		count++;
+	}
+
+	return (count);
+}
+
+/**
  * _printf - produces output according to a format
  * @format: format string containing characters and specifiers
  *
@@ -177,12 +335,17 @@ int _printf(const char *format, ...)
 				count += print_int(args);
 			else if (format[i] == 'b')
 				count += print_binary(args);
+			else if (format[i] == 'u')
+				count += print_unsigned(args);
+			else if (format[i] == 'o')
+				count += print_octal(args);
+			else if (format[i] == 'x')
+				count += print_hex_lower(args);
+			else if (format[i] == 'X')
+				count += print_hex_upper(args);
 			else
 			{
-				/*
-				 * For unsupported specifiers, print the
-				 * percent sign and the character as-is.
-				 */
+				/* Unsupported specifier: print % and char as-is */
 				_putchar('%');
 				_putchar(format[i]);
 				count += 2;
