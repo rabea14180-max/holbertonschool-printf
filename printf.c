@@ -21,10 +21,7 @@ int print_int(va_list args)
 	{
 		_putchar('-');
 		count++;
-		/*
-		 * Cast to long before negating to safely handle INT_MIN,
-		 * then convert the positive value to unsigned int.
-		 */
+		/* Cast to long to safely handle INT_MIN before converting */
 		num = (unsigned int)(-(long)n);
 	}
 	else
@@ -101,6 +98,45 @@ int print_percent(void)
 }
 
 /**
+ * print_binary - prints an unsigned int in binary
+ * @args: argument list containing the unsigned int to print
+ *
+ * Return: number of characters printed
+ */
+int print_binary(va_list args)
+{
+	unsigned int n;
+	char buffer[32];
+	int i, count;
+
+	n = va_arg(args, unsigned int);
+	count = 0;
+
+	if (n == 0)
+	{
+		_putchar('0');
+		return (1);
+	}
+
+	i = 0;
+	while (n > 0 && i < 32)
+	{
+		buffer[i] = (char)((n & 1) + '0');
+		n >>= 1;
+		i++;
+	}
+
+	while (i > 0)
+	{
+		i--;
+		_putchar(buffer[i]);
+		count++;
+	}
+
+	return (count);
+}
+
+/**
  * _printf - produces output according to a format
  * @format: format string containing characters and specifiers
  *
@@ -132,21 +168,15 @@ int _printf(const char *format, ...)
 			}
 
 			if (format[i] == 'c')
-			{
 				count += print_char(args);
-			}
 			else if (format[i] == 's')
-			{
 				count += print_string(args);
-			}
 			else if (format[i] == '%')
-			{
 				count += print_percent();
-			}
 			else if (format[i] == 'd' || format[i] == 'i')
-			{
 				count += print_int(args);
-			}
+			else if (format[i] == 'b')
+				count += print_binary(args);
 			else
 			{
 				/*
