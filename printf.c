@@ -1,54 +1,6 @@
 #include "main.h"
 
 /**
- * print_int - prints a signed integer using _putchar
- * @args: argument list containing the integer to print
- *
- * Return: number of characters printed (including sign if negative)
- */
-int print_int(va_list args)
-{
-	int n;
-	unsigned int num;
-	int count;
-	char buffer[12];
-	int i;
-
-	n = va_arg(args, int);
-	count = 0;
-
-	if (n < 0)
-	{
-		_putchar('-');
-		count++;
-		/* Cast to long to safely handle INT_MIN before converting */
-		num = (unsigned int)(-(long)n);
-	}
-	else
-	{
-		num = (unsigned int)n;
-	}
-
-	i = 0;
-	/* Store digits in reverse order in buffer */
-	do {
-		buffer[i] = (char)((num % 10) + '0');
-		i++;
-		num /= 10;
-	} while (num > 0);
-
-	/* Print digits in the correct order */
-	while (i > 0)
-	{
-		i--;
-		_putchar(buffer[i]);
-		count++;
-	}
-
-	return (count);
-}
-
-/**
  * print_char - prints a character
  * @args: argument list
  *
@@ -86,6 +38,48 @@ int print_string(va_list args)
 }
 
 /**
+ * print_S - prints a string, replacing non-printable chars
+ *           with \xHH (uppercase hex, always 2 digits)
+ * @args: argument list
+ *
+ * Return: number of characters printed
+ */
+int print_S(va_list args)
+{
+	char *str;
+	int i, count;
+	unsigned char c;
+	char *hex = "0123456789ABCDEF";
+
+	str = va_arg(args, char *);
+	if (str == NULL)
+		str = "(null)";
+
+	count = 0;
+
+	for (i = 0; str[i] != '\0'; i++)
+	{
+		c = (unsigned char)str[i];
+
+		if (c > 0 && (c < 32 || c >= 127))
+		{
+			_putchar('\\');
+			_putchar('x');
+			_putchar(hex[c / 16]);
+			_putchar(hex[c % 16]);
+			count += 4;
+		}
+		else
+		{
+			_putchar(c);
+			count++;
+		}
+	}
+
+	return (count);
+}
+
+/**
  * print_percent - prints the character '%'
  *
  * Return: number of characters printed (1)
@@ -95,6 +89,51 @@ int print_percent(void)
 	_putchar('%');
 
 	return (1);
+}
+
+/**
+ * print_int - prints a signed integer using _putchar
+ * @args: argument list containing the integer to print
+ *
+ * Return: number of characters printed (including sign if negative)
+ */
+int print_int(va_list args)
+{
+	int n;
+	unsigned int num;
+	int count;
+	char buffer[12];
+	int i;
+
+	n = va_arg(args, int);
+	count = 0;
+
+	if (n < 0)
+	{
+		_putchar('-');
+		count++;
+		num = (unsigned int)(-(long)n);
+	}
+	else
+	{
+		num = (unsigned int)n;
+	}
+
+	i = 0;
+	do {
+		buffer[i] = (char)((num % 10) + '0');
+		i++;
+		num /= 10;
+	} while (num > 0);
+
+	while (i > 0)
+	{
+		i--;
+		_putchar(buffer[i]);
+		count++;
+	}
+
+	return (count);
 }
 
 /**
@@ -322,6 +361,7 @@ int _printf(const char *format, ...)
 			if (format[i] == '\0')
 			{
 				va_end(args);
+				_putchar(-1);
 				return (-1);
 			}
 
@@ -329,6 +369,8 @@ int _printf(const char *format, ...)
 				count += print_char(args);
 			else if (format[i] == 's')
 				count += print_string(args);
+			else if (format[i] == 'S')
+				count += print_S(args);
 			else if (format[i] == '%')
 				count += print_percent();
 			else if (format[i] == 'd' || format[i] == 'i')
@@ -345,7 +387,6 @@ int _printf(const char *format, ...)
 				count += print_hex_upper(args);
 			else
 			{
-				/* Unsupported specifier: print % and char as-is */
 				_putchar('%');
 				_putchar(format[i]);
 				count += 2;
