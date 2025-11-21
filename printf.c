@@ -359,5 +359,7 @@ int _printf(const char *format, ...)
 	}
 
 	va_end(args);
+	_putchar(-1); /* flush buffered output */
+
 	return (count);
 }
