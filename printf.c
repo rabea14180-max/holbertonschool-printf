@@ -334,6 +334,61 @@ int print_hex_upper(va_list args)
 }
 
 /**
+ * print_pointer - prints a pointer address in hexadecimal
+ * @args: argument list containing the pointer to print
+ *
+ * Return: number of characters printed
+ */
+int print_pointer(va_list args)
+{
+	void *ptr;
+	unsigned long addr;
+	char buffer[32];
+	char *digits = "0123456789abcdef";
+	int i, count;
+
+	ptr = va_arg(args, void *);
+	if (ptr == NULL)
+	{
+		_putchar('(');
+		_putchar('n');
+		_putchar('i');
+		_putchar('l');
+		_putchar(')');
+		return (5);
+	}
+
+	addr = (unsigned long)ptr;
+
+	_putchar('0');
+	_putchar('x');
+	count = 2;
+
+	if (addr == 0)
+	{
+		_putchar('0');
+		return (count + 1);
+	}
+
+	i = 0;
+	while (addr > 0 && i < 32)
+	{
+		buffer[i] = digits[addr % 16];
+		addr /= 16;
+		i++;
+	}
+
+	while (i > 0)
+	{
+		i--;
+		_putchar(buffer[i]);
+		count++;
+	}
+
+	return (count);
+}
+
+/**
  * _printf - produces output according to a format
  * @format: format string containing characters and specifiers
  *
@@ -385,6 +440,8 @@ int _printf(const char *format, ...)
 				count += print_hex_lower(args);
 			else if (format[i] == 'X')
 				count += print_hex_upper(args);
+			else if (format[i] == 'p')
+				count += print_pointer(args);
 			else
 			{
 				_putchar('%');
