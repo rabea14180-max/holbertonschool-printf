@@ -1,382 +1,484 @@
 #include "main.h"
-#include <stdlib.h>
-
-/* Prototypes for internal helpers */
-int print_char(va_list args, int width, int minus_flag);
-int print_string(va_list args, int width, int precision, int minus_flag);
-int print_percent(int width, int minus_flag);
-int print_int(va_list args, int width, int plus_flag, int space_flag,
-              int length, int precision);
-int print_unsigned(va_list args, int width, int length, int precision,
-                   int is_octal, int is_hex, int uppercase);
 
 /* small helper */
 static int max(int a, int b)
 {
-    return (a > b ? a : b);
+	return (a > b ? a : b);
 }
 
+/* ===================== basic helpers ===================== */
+
 /**
- * print_char - prints a single character with optional width / '-'
+ * print_char - prints a character with optional width and '-'
+ * @args: argument list
+ * @width: field width
+ * @minus_flag: 1 if '-' flag is active
+ *
+ * Return: number of printed characters
  */
-int print_char(va_list args, int width, int minus_flag)
+static int print_char(va_list args, int width, int minus_flag)
 {
-    char c;
-    int count = 0;
+	char c;
+	int i, count = 0;
 
-    c = (char)va_arg(args, int);
-    if (width < 1)
-        width = 1;
+	c = (char)va_arg(args, int);
+	if (width < 1)
+		width = 1;
 
-    if (!minus_flag)
-        while (--width > 0)
-            count += _putchar(' ');
+	if (!minus_flag)
+		for (i = 0; i < width - 1; i++)
+			count += _putchar(' ');
 
-    count += _putchar(c);
+	count += _putchar(c);
 
-    if (minus_flag)
-        while (--width > 0)
-            count += _putchar(' ');
+	if (minus_flag)
+		for (i = 0; i < width - 1; i++)
+			count += _putchar(' ');
 
-    return (count);
+	return (count);
 }
 
 /**
  * print_string - prints a string with width / precision / '-'
+ * @args: argument list
+ * @width: field width
+ * @precision: max characters to print (-1 means all)
+ * @minus_flag: 1 if '-' flag is active
+ *
+ * Return: number of printed characters
  */
-int print_string(va_list args, int width, int precision, int minus_flag)
+static int print_string(va_list args, int width, int precision, int minus_flag)
 {
-    char *s;
-    int len = 0, i;
+	char *s;
+	int len = 0, i, pad, to_print;
 
-    s = va_arg(args, char *);
-    if (!s)
-        s = "(null)";
+	s = va_arg(args, char *);
+	if (!s)
+		s = "(null)";
 
-    while (s[len])
-        len++;
+	while (s[len])
+		len++;
 
-    if (precision >= 0 && precision < len)
-        len = precision;
+	to_print = len;
+	if (precision >= 0 && precision < len)
+		to_print = precision;
 
-    if (width < len)
-        width = len;
+	if (width < to_print)
+		width = to_print;
 
-    i = 0;
-    if (!minus_flag)
-        while (i++ < width - len)
-            _putchar(' ');
+	pad = width - to_print;
 
-    for (i = 0; i < len; i++)
-        _putchar(s[i]);
+	if (!minus_flag)
+		for (i = 0; i < pad; i++)
+			_putchar(' ');
 
-    if (minus_flag)
-        while (i++ < width)
-            _putchar(' ');
+	for (i = 0; i < to_print; i++)
+		_putchar(s[i]);
 
-    return (width);
+	if (minus_flag)
+		for (i = 0; i < pad; i++)
+			_putchar(' ');
+
+	return (width);
 }
 
 /**
- * print_percent - prints a '%' with optional width / '-'
+ * print_percent - prints '%' with width / '-'
+ * @width: field width
+ * @minus_flag: 1 if '-' flag is active
+ *
+ * Return: number of printed characters
  */
-int print_percent(int width, int minus_flag)
+static int print_percent(int width, int minus_flag)
 {
-    int count = 0;
+	int i, count = 0;
 
-    if (width < 1)
-        width = 1;
+	if (width < 1)
+		width = 1;
 
-    if (!minus_flag)
-        while (--width > 0)
-            count += _putchar(' ');
+	if (!minus_flag)
+		for (i = 0; i < width - 1; i++)
+			count += _putchar(' ');
 
-    count += _putchar('%');
+	count += _putchar('%');
 
-    if (minus_flag)
-        while (--width > 0)
-            count += _putchar(' ');
+	if (minus_flag)
+		for (i = 0; i < width - 1; i++)
+			count += _putchar(' ');
 
-    return (count);
+	return (count);
 }
 
+/* ===================== integers (d / i) ===================== */
+
 /**
- * print_int - prints signed integers (d / i)
- * Handles: width, precision, '+', ' ', 'l', 'h'
+ * print_int - prints signed integers with flags/width/precision
+ * @args: argument list
+ * @width: field width
+ * @plus_flag: '+' flag
+ * @space_flag: ' ' flag
+ * @zero_flag: '0' flag
+ * @minus_flag: '-' flag
+ * @length: 0, 'l' or 'h'
+ * @precision: precision (-1 means not specified)
+ *
+ * Return: number of printed characters
  */
-int print_int(va_list args, int width, int plus_flag, int space_flag,
-              int length, int precision)
+static int print_int(va_list args, int width, int plus_flag, int space_flag,
+		     int zero_flag, int minus_flag, int length, int precision)
 {
-    long n;
-    unsigned long u;
-    char buf[32];
-    int i = 0, digits, total_len, pad, count = 0;
-    int zero_prec = 0;
-    char sign_char = 0;
-    int has_precision = (precision >= 0);
+	long n;
+	unsigned long u;
+	char buf[32];
+	int i = 0, digits, has_precision, zero_prec = 0;
+	int total_len, pad, pad_left, pad_right, count = 0;
+	char sign_char = 0;
 
-    /* get value according to length modifier */
-    if (length == 'l')
-        n = va_arg(args, long);
-    else if (length == 'h')
-        n = (short)va_arg(args, int);
-    else
-        n = va_arg(args, int);
+	if (length == 'l')
+		n = va_arg(args, long);
+	else if (length == 'h')
+		n = (short)va_arg(args, int);
+	else
+		n = va_arg(args, int);
 
-    /* sign handling */
-    if (n < 0)
-    {
-        sign_char = '-';
-        u = (unsigned long)(-n);
-    }
-    else
-    {
-        if (plus_flag)
-            sign_char = '+';
-        else if (space_flag)
-            sign_char = ' ';
-        u = (unsigned long)n;
-    }
+	if (n < 0)
+	{
+		sign_char = '-';
+		u = (unsigned long)(-n);
+	}
+	else
+	{
+		u = (unsigned long)n;
+		if (plus_flag)
+			sign_char = '+';
+		else if (space_flag)
+			sign_char = ' ';
+	}
 
-    /* special rule: precision == 0 && value == 0 -> print nothing */
-    if (has_precision && precision == 0 && u == 0)
-        digits = 0;
-    else
-    {
-        if (u == 0)
-            buf[i++] = '0';
-        while (u > 0)
-        {
-            buf[i++] = (char)('0' + (u % 10));
-            u /= 10;
-        }
-        digits = i;
-    }
+	has_precision = (precision >= 0);
 
-    if (has_precision)
-        zero_prec = max(precision - digits, 0);
+	/* build digits */
+	if (has_precision && precision == 0 && u == 0)
+		digits = 0;
+	else
+	{
+		if (u == 0)
+			buf[i++] = '0';
+		while (u > 0)
+		{
+			buf[i++] = (char)('0' + (u % 10));
+			u /= 10;
+		}
+		digits = i;
+	}
 
-    total_len = digits + zero_prec + (sign_char ? 1 : 0);
-    if (width < total_len)
-        width = total_len;
+	if (has_precision)
+		zero_prec = max(precision - digits, 0);
+	else if (zero_flag && !minus_flag && width > digits + (sign_char ? 1 : 0))
+		zero_prec = width - (digits + (sign_char ? 1 : 0));
 
-    pad = width - total_len;
+	total_len = digits + zero_prec + (sign_char ? 1 : 0);
+	if (width < total_len)
+		width = total_len;
 
-    /* left spaces (no '0' flag في تاسك 11) */
-    while (pad-- > 0)
-        count += _putchar(' ');
+	pad = width - total_len;
+	if (pad < 0)
+		pad = 0;
 
-    if (sign_char)
-        count += _putchar(sign_char);
+	pad_left = minus_flag ? 0 : pad;
+	pad_right = minus_flag ? pad : 0;
 
-    while (zero_prec-- > 0)
-        count += _putchar('0');
+	while (pad_left-- > 0)
+		count += _putchar(' ');
 
-    while (digits-- > 0)
-        count += _putchar(buf[digits]);
+	if (sign_char)
+		count += _putchar(sign_char);
 
-    return (count);
+	while (zero_prec-- > 0)
+		count += _putchar('0');
+
+	while (digits-- > 0)
+		count += _putchar(buf[digits]);
+
+	while (pad_right-- > 0)
+		count += _putchar(' ');
+
+	return (count);
 }
 
+/* ===================== unsigned (u / o / x / X) ===================== */
+
 /**
- * print_unsigned - prints u / o / x / X with width & precision
+ * print_unsigned - prints unsigned numbers with all flags
+ * @args: argument list
+ * @width: field width
+ * @length: 0, 'l', 'h'
+ * @precision: precision (-1 means not specified)
+ * @is_octal: 1 for %o
+ * @is_hex: 1 for %x / %X
+ * @uppercase: 1 for %X
+ * @hash_flag: '#' flag
+ * @zero_flag: '0' flag
+ * @minus_flag: '-' flag
+ *
+ * Return: number of printed characters
  */
-int print_unsigned(va_list args, int width, int length, int precision,
-                   int is_octal, int is_hex, int uppercase)
+static int print_unsigned(va_list args, int width, int length, int precision,
+			  int is_octal, int is_hex, int uppercase,
+			  int hash_flag, int zero_flag, int minus_flag)
 {
-    unsigned long n;
-    char buf[32];
-    int i = 0, base = 10, digits, total_len, pad, count = 0;
-    int zero_prec = 0;
-    int has_precision = (precision >= 0);
+	unsigned long n;
+	unsigned long tmp;
+	char buf[32];
+	int i = 0, base = 10, digits, has_precision;
+	int zero_prec = 0, total_len, pad, pad_left, pad_right, count = 0;
+	int value_is_zero, prefix_len = 0;
 
-    if (length == 'l')
-        n = va_arg(args, unsigned long);
-    else if (length == 'h')
-        n = (unsigned short)va_arg(args, unsigned int);
-    else
-        n = va_arg(args, unsigned int);
+	if (length == 'l')
+		n = va_arg(args, unsigned long);
+	else if (length == 'h')
+		n = (unsigned short)va_arg(args, unsigned int);
+	else
+		n = va_arg(args, unsigned int);
 
-    if (is_octal)
-        base = 8;
-    else if (is_hex)
-        base = 16;
+	value_is_zero = (n == 0);
 
-    /* precision rule for zero */
-    if (has_precision && precision == 0 && n == 0)
-        digits = 0;
-    else
-    {
-        if (n == 0)
-            buf[i++] = '0';
-        while (n > 0)
-        {
-            int digit = n % base;
+	if (is_octal)
+		base = 8;
+	else if (is_hex)
+		base = 16;
 
-            if (digit < 10)
-                buf[i++] = (char)('0' + digit);
-            else if (uppercase)
-                buf[i++] = (char)('A' + (digit - 10));
-            else
-                buf[i++] = (char)('a' + (digit - 10));
-            n /= base;
-        }
-        digits = i;
-    }
+	has_precision = (precision >= 0);
 
-    if (has_precision)
-        zero_prec = max(precision - digits, 0);
+	/* build digits */
+	if (has_precision && precision == 0 && value_is_zero)
+		digits = 0;
+	else
+	{
+		if (n == 0)
+			buf[i++] = '0';
+		tmp = n;
+		while (tmp > 0)
+		{
+			int d = tmp % base;
 
-    total_len = digits + zero_prec;
-    if (width < total_len)
-        width = total_len;
+			if (d < 10)
+				buf[i++] = (char)('0' + d);
+			else if (uppercase)
+				buf[i++] = (char)('A' + (d - 10));
+			else
+				buf[i++] = (char)('a' + (d - 10));
+			tmp /= base;
+		}
+		digits = i;
+	}
 
-    pad = width - total_len;
+	/* prefix for # */
+	if (hash_flag)
+	{
+		if (is_octal)
+		{
+			/* special: %#.0o,0 => "0" only */
+			if (!value_is_zero || (has_precision && precision == 0))
+				prefix_len = 1;
+		}
+		else if (is_hex && !value_is_zero)
+			prefix_len = 2;
+	}
 
-    while (pad-- > 0)
-        count += _putchar(' ');
+	if (has_precision)
+		zero_prec = max(precision - digits, 0);
+	else if (zero_flag && !minus_flag &&
+		 width > digits + prefix_len)
+		zero_prec = width - (digits + prefix_len);
 
-    while (zero_prec-- > 0)
-        count += _putchar('0');
+	total_len = digits + zero_prec + prefix_len;
+	if (width < total_len)
+		width = total_len;
 
-    while (digits-- > 0)
-        count += _putchar(buf[digits]);
+	pad = width - total_len;
+	if (pad < 0)
+		pad = 0;
 
-    return (count);
+	pad_left = minus_flag ? 0 : pad;
+	pad_right = minus_flag ? pad : 0;
+
+	while (pad_left-- > 0)
+		count += _putchar(' ');
+
+	/* print prefix if any */
+	if (prefix_len == 1 && is_octal)
+		count += _putchar('0');
+	else if (prefix_len == 2 && is_hex)
+	{
+		count += _putchar('0');
+		if (uppercase)
+			count += _putchar('X');
+		else
+			count += _putchar('x');
+	}
+
+	while (zero_prec-- > 0)
+		count += _putchar('0');
+
+	while (digits-- > 0)
+		count += _putchar(buf[digits]);
+
+	while (pad_right-- > 0)
+		count += _putchar(' ');
+
+	return (count);
 }
 
+/* ======================= main _printf ======================= */
+
 /**
- * _printf - main function
- * Supports tasks 0..11 on non-custom specifiers.
+ * _printf - custom printf (tasks 0..12)
+ * @format: format string
+ *
+ * Return: number of characters printed, or -1 on error
  */
 int _printf(const char *format, ...)
 {
-    va_list args;
-    int i = 0, count = 0;
+	va_list args;
+	int i = 0, count = 0;
+	int width, precision;
+	int minus_flag, plus_flag, space_flag, zero_flag, hash_flag;
+	int length;
 
-    int width, precision;
-    int minus_flag, plus_flag, space_flag;
-    int length;
+	if (!format)
+		return (-1);
 
-    if (!format)
-        return (-1);
+	va_start(args, format);
 
-    va_start(args, format);
+	while (format[i])
+	{
+		if (format[i] != '%')
+		{
+			count += _putchar(format[i]);
+			i++;
+			continue;
+		}
 
-    while (format[i])
-    {
-        if (format[i] != '%')
-        {
-            count += _putchar(format[i]);
-            i++;
-            continue;
-        }
+		/* we saw '%' */
+		i++;
+		if (!format[i])
+		{
+			_putchar(-1);
+			va_end(args);
+			return (-1);
+		}
 
-        /* we saw a '%' */
-        i++;
-        if (!format[i])
-        {
-            _putchar(-1);
-            va_end(args);
-            return (-1);
-        }
+		/* reset state */
+		width = 0;
+		precision = -1;
+		minus_flag = plus_flag = space_flag = zero_flag = hash_flag = 0;
+		length = 0;
 
-        /* reset flags/state for this conversion */
-        minus_flag = plus_flag = space_flag = 0;
-        width = 0;
-        precision = -1;  /* -1 means: precision not specified */
-        length = 0;
+		/* ---------- flags ---------- */
+		while (format[i] == '-' || format[i] == '+' || format[i] == ' ' ||
+		       format[i] == '0' || format[i] == '#')
+		{
+			if (format[i] == '-')
+				minus_flag = 1;
+			else if (format[i] == '+')
+				plus_flag = 1;
+			else if (format[i] == ' ')
+				space_flag = 1;
+			else if (format[i] == '0')
+				zero_flag = 1;
+			else if (format[i] == '#')
+				hash_flag = 1;
+			i++;
+		}
 
-        /* ----- flags: -, +, space ----- */
-        while (format[i] == '-' || format[i] == '+' || format[i] == ' ')
-        {
-            if (format[i] == '-')
-                minus_flag = 1;
-            else if (format[i] == '+')
-                plus_flag = 1;
-            else if (format[i] == ' ')
-                space_flag = 1;
-            i++;
-        }
+		/* ---------- width ---------- */
+		if (format[i] == '*')
+		{
+			width = va_arg(args, int);
+			if (width < 0)
+			{
+				minus_flag = 1;
+				width = -width;
+			}
+			i++;
+		}
+		else
+		{
+			while (format[i] >= '0' && format[i] <= '9')
+			{
+				width = width * 10 + (format[i] - '0');
+				i++;
+			}
+		}
 
-        /* ----- field width ----- */
-        if (format[i] == '*')
-        {
-            width = va_arg(args, int);
-            if (width < 0)
-            {
-                minus_flag = 1;
-                width = -width;
-            }
-            i++;
-        }
-        else
-        {
-            while (format[i] >= '0' && format[i] <= '9')
-            {
-                width = width * 10 + (format[i] - '0');
-                i++;
-            }
-        }
+		/* ---------- precision ---------- */
+		if (format[i] == '.')
+		{
+			i++;
+			precision = 0;
+			if (format[i] == '*')
+			{
+				precision = va_arg(args, int);
+				if (precision < 0)
+					precision = -1;
+				i++;
+			}
+			else
+			{
+				while (format[i] >= '0' && format[i] <= '9')
+				{
+					precision = precision * 10 + (format[i] - '0');
+					i++;
+				}
+			}
+		}
 
-        /* ----- precision ----- */
-        if (format[i] == '.')
-        {
-            i++;
-            precision = 0;
-            if (format[i] == '*')
-            {
-                precision = va_arg(args, int);
-                if (precision < 0)
-                    precision = -1; /* treat as “no precision” */
-                i++;
-            }
-            else
-            {
-                while (format[i] >= '0' && format[i] <= '9')
-                {
-                    precision = precision * 10 + (format[i] - '0');
-                    i++;
-                }
-            }
-        }
+		/* ---------- length modifiers ---------- */
+		if (format[i] == 'l' || format[i] == 'h')
+		{
+			length = format[i];
+			i++;
+		}
 
-        /* ----- length modifier ----- */
-        if (format[i] == 'l' || format[i] == 'h')
-        {
-            length = format[i];
-            i++;
-        }
+		/* ---------- specifier ---------- */
+		if (format[i] == 'c')
+			count += print_char(args, width, minus_flag);
+		else if (format[i] == 's')
+			count += print_string(args, width, precision, minus_flag);
+		else if (format[i] == '%')
+			count += print_percent(width, minus_flag);
+		else if (format[i] == 'd' || format[i] == 'i')
+			count += print_int(args, width, plus_flag, space_flag,
+					   zero_flag, minus_flag,
+					   length, precision);
+		else if (format[i] == 'u')
+			count += print_unsigned(args, width, length, precision,
+						0, 0, 0, hash_flag,
+						zero_flag, minus_flag);
+		else if (format[i] == 'o')
+			count += print_unsigned(args, width, length, precision,
+						1, 0, 0, hash_flag,
+						zero_flag, minus_flag);
+		else if (format[i] == 'x')
+			count += print_unsigned(args, width, length, precision,
+						0, 1, 0, hash_flag,
+						zero_flag, minus_flag);
+		else if (format[i] == 'X')
+			count += print_unsigned(args, width, length, precision,
+						0, 1, 1, hash_flag,
+						zero_flag, minus_flag);
+		else
+		{
+			/* unknown specifier: print '%' and the char */
+			count += _putchar('%');
+			count += _putchar(format[i]);
+		}
 
-        /* ----- specifier dispatch ----- */
-        if (format[i] == 'c')
-            count += print_char(args, width, minus_flag);
-        else if (format[i] == 's')
-            count += print_string(args, width, precision, minus_flag);
-        else if (format[i] == '%')
-            count += print_percent(width, minus_flag);
-        else if (format[i] == 'd' || format[i] == 'i')
-            count += print_int(args, width, plus_flag, space_flag,
-                               length, precision);
-        else if (format[i] == 'u')
-            count += print_unsigned(args, width, length, precision, 0, 0, 0);
-        else if (format[i] == 'o')
-            count += print_unsigned(args, width, length, precision, 1, 0, 0);
-        else if (format[i] == 'x')
-            count += print_unsigned(args, width, length, precision, 0, 1, 0);
-        else if (format[i] == 'X')
-            count += print_unsigned(args, width, length, precision, 0, 1, 1);
-        else
-        {
-            /* unknown specifier: print it literally like %q */
-            count += _putchar('%');
-            count += _putchar(format[i]);
-        }
+		i++;
+	}
 
-        i++;
-    }
-
-    _putchar(-1); /* flush buffer */
-    va_end(args);
-    return (count);
+	_putchar(-1); /* flush buffer */
+	va_end(args);
+	return (count);
 }
