@@ -1,28 +1,34 @@
 #include "main.h"
 
 /**
- * _putchar - buffered character output
- * @c: character to write, or -1 to flush the buffer
+ * _putchar - buffered write of a single character
+ * @c: character to print, or -1 to flush the buffer
  *
- * Return: 1 on success
+ * Return: 1 when writing a normal character.
+ * When flushing (c == -1), returns number of bytes written by write().
  */
 int _putchar(char c)
 {
-	static char buffer[1024];
-	static int index;
+    static char buffer[1024];
+    static int index;
+    int written = 0;
 
-	if (c == -1 || index == 1024)
-	{
-		if (index > 0)
-			write(1, buffer, index);
-		index = 0;
-	}
+    if (c == -1)
+    {
+        if (index > 0)
+        {
+            written = write(1, buffer, index);
+            index = 0;
+        }
+        return (written);
+    }
 
-	if (c != -1)
-	{
-		buffer[index] = c;
-		index++;
-	}
+    buffer[index++] = c;
+    if (index == 1024)
+    {
+        written = write(1, buffer, index);
+        index = 0;
+    }
 
-	return (1);
+    return (1);
 }
