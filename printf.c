@@ -109,6 +109,30 @@ static int print_percent(int width, int minus_flag)
 	return (count);
 }
 
+/**
+ * print_rev - prints a string in reverse order (%r)
+ * @args: argument list
+ *
+ * Return: number of printed characters
+ */
+static int print_rev(va_list args)
+{
+	char *s;
+	int len = 0, i, count = 0;
+
+	s = va_arg(args, char *);
+	if (!s)
+		s = "(null)";
+
+	while (s[len])
+		len++;
+
+	for (i = len - 1; i >= 0; i--)
+		count += _putchar(s[i]);
+
+	return (count);
+}
+
 /* ===================== integers (d / i) ===================== */
 
 /**
@@ -278,7 +302,6 @@ static int print_unsigned(va_list args, int width, int length, int precision,
 	{
 		if (is_octal)
 		{
-			/* special: %#.0o,0 => "0" only */
 			if (!value_is_zero || (has_precision && precision == 0))
 				prefix_len = 1;
 		}
@@ -306,7 +329,6 @@ static int print_unsigned(va_list args, int width, int length, int precision,
 	while (pad_left-- > 0)
 		count += _putchar(' ');
 
-	/* print prefix if any */
 	if (prefix_len == 1 && is_octal)
 		count += _putchar('0');
 	else if (prefix_len == 2 && is_hex)
@@ -333,7 +355,7 @@ static int print_unsigned(va_list args, int width, int length, int precision,
 /* ======================= main _printf ======================= */
 
 /**
- * _printf - custom printf (tasks 0..12)
+ * _printf - custom printf (tasks 0..14)
  * @format: format string
  *
  * Return: number of characters printed, or -1 on error
@@ -360,8 +382,7 @@ int _printf(const char *format, ...)
 			continue;
 		}
 
-		/* we saw '%' */
-		i++;
+		i++; /* skip '%' */
 		if (!format[i])
 		{
 			_putchar(-1);
@@ -448,6 +469,8 @@ int _printf(const char *format, ...)
 			count += print_string(args, width, precision, minus_flag);
 		else if (format[i] == '%')
 			count += print_percent(width, minus_flag);
+		else if (format[i] == 'r')   /* تاسك 14 */
+			count += print_rev(args);
 		else if (format[i] == 'd' || format[i] == 'i')
 			count += print_int(args, width, plus_flag, space_flag,
 					   zero_flag, minus_flag,
