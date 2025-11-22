@@ -241,23 +241,45 @@ static int print_S(va_list args)
 
 /**
  * print_pointer - prints a pointer value in hex (%p)
+ *                with width and '-' flag
  * @args: argument list
+ * @width: field width
+ * @minus_flag: 1 if '-' flag is active
  *
  * Return: number of printed characters
  */
-static int print_pointer(va_list args)
+static int print_pointer(va_list args, int width, int minus_flag)
 {
 	void *ptr = va_arg(args, void *);
 	unsigned long n;
 	char buf[32];
-	int i = 0, digits, count = 0;
+	int len = 0, i, count = 0, pad;
+	int total_len;
 
+	/* NULL pointer: print "(nil)" مع احترام الـ width */
 	if (!ptr)
 	{
 		char *nil = "(nil)";
 
-		while (nil[i])
-			count += _putchar(nil[i++]);
+		while (nil[len])
+			len++;
+
+		if (width < len)
+			width = len;
+
+		pad = width - len;
+
+		if (!minus_flag)
+			for (i = 0; i < pad; i++)
+				count += _putchar(' ');
+
+		for (i = 0; i < len; i++)
+			count += _putchar(nil[i]);
+
+		if (minus_flag)
+			for (i = 0; i < pad; i++)
+				count += _putchar(' ');
+
 		return (count);
 	}
 
@@ -268,18 +290,32 @@ static int print_pointer(va_list args)
 		int d = n % 16;
 
 		if (d < 10)
-			buf[i++] = (char)('0' + d);
+			buf[len++] = (char)('0' + d);
 		else
-			buf[i++] = (char)('a' + (d - 10));
+			buf[len++] = (char)('a' + (d - 10));
 		n /= 16;
 	}
-	digits = i;
+
+	total_len = len + 2; /* 2 for "0x" */
+
+	if (width < total_len)
+		width = total_len;
+
+	pad = width - total_len;
+
+	if (!minus_flag)
+		for (i = 0; i < pad; i++)
+			count += _putchar(' ');
 
 	count += _putchar('0');
 	count += _putchar('x');
 
-	while (digits-- > 0)
-		count += _putchar(buf[digits]);
+	for (i = len - 1; i >= 0; i--)
+		count += _putchar(buf[i]);
+
+	if (minus_flag)
+		for (i = 0; i < pad; i++)
+			count += _putchar(' ');
 
 	return (count);
 }
@@ -623,7 +659,7 @@ int _printf(const char *format, ...)
 		else if (format[i] == 'S')
 			count += print_S(args);
 		else if (format[i] == 'p')
-			count += print_pointer(args);
+			count += print_pointer(args, width, minus_flag);
 		else if (format[i] == 'r')
 			count += print_rev(args);
 		else if (format[i] == 'R')
