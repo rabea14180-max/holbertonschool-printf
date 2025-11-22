@@ -96,25 +96,32 @@ int print_percent(void)
  * @args: argument list containing the integer to print
  * @plus_flag: if non-zero, print '+' for positive numbers
  * @space_flag: if non-zero and plus_flag is 0, print leading space
+ * @length: 0 for int, 1 for long, 2 for short
  *
  * Return: number of characters printed (including sign if any)
  */
-int print_int(va_list args, int plus_flag, int space_flag)
+int print_int(va_list args, int plus_flag, int space_flag, int length)
 {
-	int n;
-	unsigned int num;
+	long int n;
+	unsigned long int num;
 	int count;
-	char buffer[12];
+	char buffer[32];
 	int i;
 
-	n = va_arg(args, int);
+	if (length == 1)
+		n = va_arg(args, long int);
+	else if (length == 2)
+		n = (short)va_arg(args, int);
+	else
+		n = va_arg(args, int);
+
 	count = 0;
 
 	if (n < 0)
 	{
 		_putchar('-');
 		count++;
-		num = (unsigned int)(-(long)n);
+		num = (unsigned long int)(-(long)n);
 	}
 	else
 	{
@@ -128,7 +135,7 @@ int print_int(va_list args, int plus_flag, int space_flag)
 			_putchar(' ');
 			count++;
 		}
-		num = (unsigned int)n;
+		num = (unsigned long int)n;
 	}
 
 	i = 0;
@@ -188,18 +195,24 @@ int print_binary(va_list args)
 }
 
 /**
- * print_unsigned - prints an unsigned int in decimal
- * @args: argument list containing the unsigned int to print
+ * print_unsigned - prints an unsigned integer in decimal
+ * @args: argument list containing the value to print
+ * @length: 0 for unsigned int, 1 for unsigned long, 2 for unsigned short
  *
  * Return: number of characters printed
  */
-int print_unsigned(va_list args)
+int print_unsigned(va_list args, int length)
 {
-	unsigned int n;
-	char buffer[12];
+	unsigned long int n;
+	char buffer[32];
 	int i, count;
 
-	n = va_arg(args, unsigned int);
+	if (length == 1)
+		n = va_arg(args, unsigned long int);
+	else if (length == 2)
+		n = (unsigned short)va_arg(args, unsigned int);
+	else
+		n = va_arg(args, unsigned int);
 
 	if (n == 0)
 	{
@@ -208,7 +221,7 @@ int print_unsigned(va_list args)
 	}
 
 	i = 0;
-	while (n > 0 && i < 12)
+	while (n > 0 && i < 32)
 	{
 		buffer[i] = (char)((n % 10) + '0');
 		n /= 10;
@@ -228,18 +241,24 @@ int print_unsigned(va_list args)
 
 /**
  * print_octal - prints an unsigned int in octal, with optional '#'
- * @args: argument list containing the unsigned int to print
+ * @args: argument list containing the value to print
  * @hash_flag: if non-zero and number != 0, prefix with '0'
+ * @length: 0 for unsigned int, 1 for unsigned long, 2 for unsigned short
  *
  * Return: number of characters printed
  */
-int print_octal(va_list args, int hash_flag)
+int print_octal(va_list args, int hash_flag, int length)
 {
-	unsigned int n;
+	unsigned long int n;
 	char buffer[32];
 	int i, count;
 
-	n = va_arg(args, unsigned int);
+	if (length == 1)
+		n = va_arg(args, unsigned long int);
+	else if (length == 2)
+		n = (unsigned short)va_arg(args, unsigned int);
+	else
+		n = va_arg(args, unsigned int);
 
 	if (n == 0)
 	{
@@ -276,19 +295,25 @@ int print_octal(va_list args, int hash_flag)
 /**
  * print_hex_lower - prints an unsigned int in lowercase hexadecimal,
  *                   with optional '#'
- * @args: argument list containing the unsigned int to print
+ * @args: argument list containing the value to print
  * @hash_flag: if non-zero and number != 0, prefix with 0x
+ * @length: 0 for unsigned int, 1 for unsigned long, 2 for unsigned short
  *
  * Return: number of characters printed
  */
-int print_hex_lower(va_list args, int hash_flag)
+int print_hex_lower(va_list args, int hash_flag, int length)
 {
-	unsigned int n;
+	unsigned long int n;
 	char buffer[32];
 	char *digits = "0123456789abcdef";
 	int i, count;
 
-	n = va_arg(args, unsigned int);
+	if (length == 1)
+		n = va_arg(args, unsigned long int);
+	else if (length == 2)
+		n = (unsigned short)va_arg(args, unsigned int);
+	else
+		n = va_arg(args, unsigned int);
 
 	if (n == 0)
 	{
@@ -326,19 +351,25 @@ int print_hex_lower(va_list args, int hash_flag)
 /**
  * print_hex_upper - prints an unsigned int in uppercase hexadecimal,
  *                   with optional '#'
- * @args: argument list containing the unsigned int to print
+ * @args: argument list containing the value to print
  * @hash_flag: if non-zero and number != 0, prefix with 0X
+ * @length: 0 for unsigned int, 1 for unsigned long, 2 for unsigned short
  *
  * Return: number of characters printed
  */
-int print_hex_upper(va_list args, int hash_flag)
+int print_hex_upper(va_list args, int hash_flag, int length)
 {
-	unsigned int n;
+	unsigned long int n;
 	char buffer[32];
 	char *digits = "0123456789ABCDEF";
 	int i, count;
 
-	n = va_arg(args, unsigned int);
+	if (length == 1)
+		n = va_arg(args, unsigned long int);
+	else if (length == 2)
+		n = (unsigned short)va_arg(args, unsigned int);
+	else
+		n = va_arg(args, unsigned int);
 
 	if (n == 0)
 	{
@@ -441,6 +472,7 @@ int _printf(const char *format, ...)
 	va_list args;
 	int i, count;
 	int plus_flag, space_flag, hash_flag;
+	int length;
 
 	if (format == NULL)
 		return (-1);
@@ -475,6 +507,18 @@ int _printf(const char *format, ...)
 				i++;
 			}
 
+			length = 0;
+			if (format[i] == 'l')
+			{
+				length = 1;
+				i++;
+			}
+			else if (format[i] == 'h')
+			{
+				length = 2;
+				i++;
+			}
+
 			if (format[i] == '\0')
 			{
 				va_end(args);
@@ -491,17 +535,17 @@ int _printf(const char *format, ...)
 			else if (format[i] == '%')
 				count += print_percent();
 			else if (format[i] == 'd' || format[i] == 'i')
-				count += print_int(args, plus_flag, space_flag);
+				count += print_int(args, plus_flag, space_flag, length);
 			else if (format[i] == 'b')
 				count += print_binary(args);
 			else if (format[i] == 'u')
-				count += print_unsigned(args);
+				count += print_unsigned(args, length);
 			else if (format[i] == 'o')
-				count += print_octal(args, hash_flag);
+				count += print_octal(args, hash_flag, length);
 			else if (format[i] == 'x')
-				count += print_hex_lower(args, hash_flag);
+				count += print_hex_lower(args, hash_flag, length);
 			else if (format[i] == 'X')
-				count += print_hex_upper(args, hash_flag);
+				count += print_hex_upper(args, hash_flag, length);
 			else if (format[i] == 'p')
 				count += print_pointer(args);
 			else
