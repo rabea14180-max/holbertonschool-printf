@@ -133,6 +133,38 @@ static int print_rev(va_list args)
 	return (count);
 }
 
+/**
+ * print_rot13 - prints a string using ROT13 (%R)
+ * @args: argument list
+ *
+ * Return: number of printed characters
+ */
+static int print_rot13(va_list args)
+{
+	char *s;
+	char ch;
+	int i = 0, count = 0;
+
+	s = va_arg(args, char *);
+	if (!s)
+		s = "(null)";
+
+	while (s[i])
+	{
+		ch = s[i];
+
+		if (ch >= 'a' && ch <= 'z')
+			ch = (char)('a' + ((ch - 'a' + 13) % 26));
+		else if (ch >= 'A' && ch <= 'Z')
+			ch = (char)('A' + ((ch - 'A' + 13) % 26));
+
+		count += _putchar(ch);
+		i++;
+	}
+
+	return (count);
+}
+
 /* ===================== integers (d / i) ===================== */
 
 /**
@@ -181,7 +213,6 @@ static int print_int(va_list args, int width, int plus_flag, int space_flag,
 
 	has_precision = (precision >= 0);
 
-	/* build digits */
 	if (has_precision && precision == 0 && u == 0)
 		digits = 0;
 	else
@@ -198,7 +229,8 @@ static int print_int(va_list args, int width, int plus_flag, int space_flag,
 
 	if (has_precision)
 		zero_prec = max(precision - digits, 0);
-	else if (zero_flag && !minus_flag && width > digits + (sign_char ? 1 : 0))
+	else if (zero_flag && !minus_flag &&
+		 width > digits + (sign_char ? 1 : 0))
 		zero_prec = width - (digits + (sign_char ? 1 : 0));
 
 	total_len = digits + zero_prec + (sign_char ? 1 : 0);
@@ -274,7 +306,6 @@ static int print_unsigned(va_list args, int width, int length, int precision,
 
 	has_precision = (precision >= 0);
 
-	/* build digits */
 	if (has_precision && precision == 0 && value_is_zero)
 		digits = 0;
 	else
@@ -297,12 +328,12 @@ static int print_unsigned(va_list args, int width, int length, int precision,
 		digits = i;
 	}
 
-	/* prefix for # */
 	if (hash_flag)
 	{
 		if (is_octal)
 		{
-			if (!value_is_zero || (has_precision && precision == 0))
+			if (!value_is_zero ||
+			    (has_precision && precision == 0))
 				prefix_len = 1;
 		}
 		else if (is_hex && !value_is_zero)
@@ -355,7 +386,7 @@ static int print_unsigned(va_list args, int width, int length, int precision,
 /* ======================= main _printf ======================= */
 
 /**
- * _printf - custom printf (tasks 0..14)
+ * _printf - custom printf (tasks 0..15)
  * @format: format string
  *
  * Return: number of characters printed, or -1 on error
@@ -382,7 +413,7 @@ int _printf(const char *format, ...)
 			continue;
 		}
 
-		i++; /* skip '%' */
+		i++;
 		if (!format[i])
 		{
 			_putchar(-1);
@@ -390,13 +421,11 @@ int _printf(const char *format, ...)
 			return (-1);
 		}
 
-		/* reset state */
 		width = 0;
 		precision = -1;
 		minus_flag = plus_flag = space_flag = zero_flag = hash_flag = 0;
 		length = 0;
 
-		/* ---------- flags ---------- */
 		while (format[i] == '-' || format[i] == '+' || format[i] == ' ' ||
 		       format[i] == '0' || format[i] == '#')
 		{
@@ -413,7 +442,6 @@ int _printf(const char *format, ...)
 			i++;
 		}
 
-		/* ---------- width ---------- */
 		if (format[i] == '*')
 		{
 			width = va_arg(args, int);
@@ -433,7 +461,6 @@ int _printf(const char *format, ...)
 			}
 		}
 
-		/* ---------- precision ---------- */
 		if (format[i] == '.')
 		{
 			i++;
@@ -455,22 +482,22 @@ int _printf(const char *format, ...)
 			}
 		}
 
-		/* ---------- length modifiers ---------- */
 		if (format[i] == 'l' || format[i] == 'h')
 		{
 			length = format[i];
 			i++;
 		}
 
-		/* ---------- specifier ---------- */
 		if (format[i] == 'c')
 			count += print_char(args, width, minus_flag);
 		else if (format[i] == 's')
 			count += print_string(args, width, precision, minus_flag);
 		else if (format[i] == '%')
 			count += print_percent(width, minus_flag);
-		else if (format[i] == 'r')   /* تاسك 14 */
+		else if (format[i] == 'r')
 			count += print_rev(args);
+		else if (format[i] == 'R')
+			count += print_rot13(args);
 		else if (format[i] == 'd' || format[i] == 'i')
 			count += print_int(args, width, plus_flag, space_flag,
 					   zero_flag, minus_flag,
@@ -493,7 +520,6 @@ int _printf(const char *format, ...)
 						zero_flag, minus_flag);
 		else
 		{
-			/* unknown specifier: print '%' and the char */
 			count += _putchar('%');
 			count += _putchar(format[i]);
 		}
@@ -501,7 +527,7 @@ int _printf(const char *format, ...)
 		i++;
 	}
 
-	_putchar(-1); /* flush buffer */
+	_putchar(-1);
 	va_end(args);
 	return (count);
 }
