@@ -32,16 +32,17 @@ int print_char(va_list args, int width)
 }
 
 /**
- * print_string - prints a string with optional field width
+ * print_string - prints a string with width and precision
  * @args: argument list
  * @width: minimum field width
+ * @precision: maximum characters to print (-1 = ignore)
  *
  * Return: number of characters printed
  */
-int print_string(va_list args, int width)
+int print_string(va_list args, int width, int precision)
 {
 	char *str;
-	int len = 0, pad, count = 0, i;
+	int len = 0, to_print, pad, count = 0, i;
 
 	str = va_arg(args, char *);
 	if (str == NULL)
@@ -50,10 +51,15 @@ int print_string(va_list args, int width)
 	while (str[len] != '\0')
 		len++;
 
-	if (width < len)
-		width = len;
+	if (precision >= 0 && precision < len)
+		to_print = precision;
+	else
+		to_print = len;
 
-	pad = width - len;
+	if (width < to_print)
+		width = to_print;
+
+	pad = width - to_print;
 
 	while (pad > 0)
 	{
@@ -62,7 +68,7 @@ int print_string(va_list args, int width)
 		pad--;
 	}
 
-	for (i = 0; i < len; i++)
+	for (i = 0; i < to_print; i++)
 	{
 		_putchar(str[i]);
 		count++;
@@ -138,23 +144,25 @@ int print_percent(int width)
 }
 
 /**
- * print_int - prints a signed integer with + and space flags and width
+ * print_int - prints a signed integer with +, space, width and precision
  * @args: argument list
  * @width: minimum field width
- * @plus_flag: if non-zero, print '+' for positive numbers
- * @space_flag: if non-zero, print leading space for positive numbers
+ * @plus_flag: '+' flag
+ * @space_flag: ' ' flag
  * @length: 0=int, 1=long, 2=short
+ * @precision: minimum digits (-1 = no precision)
  *
  * Return: number of characters printed
  */
 int print_int(va_list args, int width, int plus_flag,
-	      int space_flag, int length)
+	      int space_flag, int length, int precision)
 {
 	long int n;
 	unsigned long int u;
 	char buf[32];
 	int i, digits, pad, total_len, count = 0;
 	char sign_char = 0;
+	int has_precision, zero_prec;
 
 	if (length == 1)
 		n = va_arg(args, long int);
@@ -177,15 +185,27 @@ int print_int(va_list args, int width, int plus_flag,
 			sign_char = ' ';
 	}
 
-	i = 0;
-	do {
-		buf[i] = (char)((u % 10) + '0');
-		u /= 10;
-		i++;
-	} while (u > 0);
-	digits = i;
+	has_precision = (precision >= 0);
 
-	total_len = digits + (sign_char ? 1 : 0);
+	if (has_precision && precision == 0 && u == 0)
+		digits = 0;
+	else
+	{
+		i = 0;
+		do {
+			buf[i] = (char)((u % 10) + '0');
+			u /= 10;
+			i++;
+		} while (u > 0);
+		digits = i;
+	}
+
+	if (has_precision && precision > digits)
+		zero_prec = precision - digits;
+	else
+		zero_prec = 0;
+
+	total_len = digits + zero_prec + (sign_char ? 1 : 0);
 	if (width < total_len)
 		width = total_len;
 
@@ -204,6 +224,13 @@ int print_int(va_list args, int width, int plus_flag,
 		count++;
 	}
 
+	while (zero_prec > 0)
+	{
+		_putchar('0');
+		count++;
+		zero_prec--;
+	}
+
 	while (digits > 0)
 	{
 		digits--;
@@ -215,7 +242,7 @@ int print_int(va_list args, int width, int plus_flag,
 }
 
 /**
- * print_binary - prints an unsigned int in binary (no width)
+ * print_binary - prints an unsigned int in binary (no width/precision)
  * @args: argument list
  *
  * Return: number of characters printed
@@ -253,18 +280,20 @@ int print_binary(va_list args)
 }
 
 /**
- * print_unsigned - prints an unsigned decimal with width and length
+ * print_unsigned - prints an unsigned decimal with width and precision
  * @args: argument list
  * @width: minimum field width
  * @length: 0=unsigned int, 1=unsigned long, 2=unsigned short
+ * @precision: minimum digits (-1 = none)
  *
  * Return: number of characters printed
  */
-int print_unsigned(va_list args, int width, int length)
+int print_unsigned(va_list args, int width, int length, int precision)
 {
 	unsigned long int n;
 	char buf[32];
 	int i, digits, pad, count = 0;
+	int has_precision, zero_prec;
 
 	if (length == 1)
 		n = va_arg(args, unsigned long int);
@@ -273,24 +302,43 @@ int print_unsigned(va_list args, int width, int length)
 	else
 		n = va_arg(args, unsigned int);
 
-	i = 0;
-	do {
-		buf[i] = (char)((n % 10) + '0');
-		n /= 10;
-		i++;
-	} while (n > 0);
-	digits = i;
+	has_precision = (precision >= 0);
 
-	if (width < digits)
-		width = digits;
+	if (has_precision && precision == 0 && n == 0)
+		digits = 0;
+	else
+	{
+		i = 0;
+		do {
+			buf[i] = (char)((n % 10) + '0');
+			n /= 10;
+			i++;
+		} while (n > 0);
+		digits = i;
+	}
 
-	pad = width - digits;
+	if (has_precision && precision > digits)
+		zero_prec = precision - digits;
+	else
+		zero_prec = 0;
+
+	if (width < digits + zero_prec)
+		width = digits + zero_prec;
+
+	pad = width - digits - zero_prec;
 
 	while (pad > 0)
 	{
 		_putchar(' ');
 		count++;
 		pad--;
+	}
+
+	while (zero_prec > 0)
+	{
+		_putchar('0');
+		count++;
+		zero_prec--;
 	}
 
 	while (digits > 0)
@@ -304,19 +352,22 @@ int print_unsigned(va_list args, int width, int length)
 }
 
 /**
- * print_octal - prints an unsigned integer in octal with # flag and width
+ * print_octal - prints an unsigned integer in octal with #, width, precision
  * @args: argument list
  * @width: minimum field width
- * @hash_flag: if non-zero, prefix with 0 when value != 0
+ * @hash_flag: '#' flag
  * @length: 0=uint,1=ulong,2=ushort
+ * @precision: minimum digits (-1 = none)
  *
  * Return: number of characters printed
  */
-int print_octal(va_list args, int width, int hash_flag, int length)
+int print_octal(va_list args, int width, int hash_flag,
+		int length, int precision)
 {
 	unsigned long int n;
 	char buf[32];
 	int i, digits, pad, count = 0;
+	int has_precision, zero_prec, is_zero;
 	int prefix_len = 0;
 
 	if (length == 1)
@@ -326,6 +377,9 @@ int print_octal(va_list args, int width, int hash_flag, int length)
 	else
 		n = va_arg(args, unsigned int);
 
+	is_zero = (n == 0);
+	has_precision = (precision >= 0);
+
 	i = 0;
 	do {
 		buf[i] = (char)((n % 8) + '0');
@@ -334,13 +388,21 @@ int print_octal(va_list args, int width, int hash_flag, int length)
 	} while (n > 0);
 	digits = i;
 
-	if (hash_flag && buf[digits - 1] != '0')
+	if (has_precision && precision == 0 && is_zero && !hash_flag)
+		digits = 0;
+
+	if (hash_flag && (digits > 0 || is_zero))
 		prefix_len = 1;
 
-	if (width < digits + prefix_len)
-		width = digits + prefix_len;
+	if (has_precision && precision > digits)
+		zero_prec = precision - digits;
+	else
+		zero_prec = 0;
 
-	pad = width - digits - prefix_len;
+	if (width < digits + zero_prec + prefix_len)
+		width = digits + zero_prec + prefix_len;
+
+	pad = width - digits - zero_prec - prefix_len;
 
 	while (pad > 0)
 	{
@@ -355,6 +417,13 @@ int print_octal(va_list args, int width, int hash_flag, int length)
 		count++;
 	}
 
+	while (zero_prec > 0)
+	{
+		_putchar('0');
+		count++;
+		zero_prec--;
+	}
+
 	while (digits > 0)
 	{
 		digits--;
@@ -366,21 +435,26 @@ int print_octal(va_list args, int width, int hash_flag, int length)
 }
 
 /**
- * print_hex_lower - prints unsigned int in lowercase hex with # and width
+ * print_hex_lower - prints unsigned int in lowercase hex with #, width,
+ * and precision.
  * @args: argument list
  * @width: minimum field width
- * @hash_flag: if non-zero, prefix with 0x when value != 0
+ * @hash_flag: '#' flag
  * @length: 0=uint,1=ulong,2=ushort
+ * @precision: minimum digits (-1 = none)
  *
  * Return: number of characters printed
  */
-int print_hex_lower(va_list args, int width, int hash_flag, int length)
+int print_hex_lower(va_list args, int width, int hash_flag,
+		    int length, int precision)
 {
 	unsigned long int n;
 	char buf[32];
 	char *digits_tab = "0123456789abcdef";
 	int i, digits, pad, count = 0;
+	int has_precision, zero_prec;
 	int prefix_len = 0;
+	int is_zero;
 
 	if (length == 1)
 		n = va_arg(args, unsigned long int);
@@ -388,6 +462,9 @@ int print_hex_lower(va_list args, int width, int hash_flag, int length)
 		n = (unsigned short)va_arg(args, unsigned int);
 	else
 		n = va_arg(args, unsigned int);
+
+	is_zero = (n == 0);
+	has_precision = (precision >= 0);
 
 	i = 0;
 	do {
@@ -397,13 +474,21 @@ int print_hex_lower(va_list args, int width, int hash_flag, int length)
 	} while (n > 0);
 	digits = i;
 
-	if (hash_flag && !(digits == 1 && buf[0] == '0'))
+	if (has_precision && precision == 0 && is_zero)
+		digits = 0;
+
+	if (hash_flag && !is_zero && digits > 0)
 		prefix_len = 2;
 
-	if (width < digits + prefix_len)
-		width = digits + prefix_len;
+	if (has_precision && precision > digits)
+		zero_prec = precision - digits;
+	else
+		zero_prec = 0;
 
-	pad = width - digits - prefix_len;
+	if (width < digits + zero_prec + prefix_len)
+		width = digits + zero_prec + prefix_len;
+
+	pad = width - digits - zero_prec - prefix_len;
 
 	while (pad > 0)
 	{
@@ -419,6 +504,13 @@ int print_hex_lower(va_list args, int width, int hash_flag, int length)
 		count += 2;
 	}
 
+	while (zero_prec > 0)
+	{
+		_putchar('0');
+		count++;
+		zero_prec--;
+	}
+
 	while (digits > 0)
 	{
 		digits--;
@@ -430,21 +522,26 @@ int print_hex_lower(va_list args, int width, int hash_flag, int length)
 }
 
 /**
- * print_hex_upper - prints unsigned int in UPPERCASE hex with # and width
+ * print_hex_upper - prints unsigned int in UPPER hex with #, width,
+ * and precision.
  * @args: argument list
  * @width: minimum field width
- * @hash_flag: if non-zero, prefix with 0X when value != 0
+ * @hash_flag: '#' flag
  * @length: 0=uint,1=ulong,2=ushort
+ * @precision: minimum digits (-1 = none)
  *
  * Return: number of characters printed
  */
-int print_hex_upper(va_list args, int width, int hash_flag, int length)
+int print_hex_upper(va_list args, int width, int hash_flag,
+		    int length, int precision)
 {
 	unsigned long int n;
 	char buf[32];
 	char *digits_tab = "0123456789ABCDEF";
 	int i, digits, pad, count = 0;
+	int has_precision, zero_prec;
 	int prefix_len = 0;
+	int is_zero;
 
 	if (length == 1)
 		n = va_arg(args, unsigned long int);
@@ -452,6 +549,9 @@ int print_hex_upper(va_list args, int width, int hash_flag, int length)
 		n = (unsigned short)va_arg(args, unsigned int);
 	else
 		n = va_arg(args, unsigned int);
+
+	is_zero = (n == 0);
+	has_precision = (precision >= 0);
 
 	i = 0;
 	do {
@@ -461,13 +561,21 @@ int print_hex_upper(va_list args, int width, int hash_flag, int length)
 	} while (n > 0);
 	digits = i;
 
-	if (hash_flag && !(digits == 1 && buf[0] == '0'))
+	if (has_precision && precision == 0 && is_zero)
+		digits = 0;
+
+	if (hash_flag && !is_zero && digits > 0)
 		prefix_len = 2;
 
-	if (width < digits + prefix_len)
-		width = digits + prefix_len;
+	if (has_precision && precision > digits)
+		zero_prec = precision - digits;
+	else
+		zero_prec = 0;
 
-	pad = width - digits - prefix_len;
+	if (width < digits + zero_prec + prefix_len)
+		width = digits + zero_prec + prefix_len;
+
+	pad = width - digits - zero_prec - prefix_len;
 
 	while (pad > 0)
 	{
@@ -483,6 +591,13 @@ int print_hex_upper(va_list args, int width, int hash_flag, int length)
 		count += 2;
 	}
 
+	while (zero_prec > 0)
+	{
+		_putchar('0');
+		count++;
+		zero_prec--;
+	}
+
 	while (digits > 0)
 	{
 		digits--;
@@ -495,6 +610,7 @@ int print_hex_upper(va_list args, int width, int hash_flag, int length)
 
 /**
  * print_pointer - prints a pointer value in hex with optional width
+ * (precision is ignored for this project)
  * @args: argument list
  * @width: minimum field width
  *
@@ -578,7 +694,7 @@ int _printf(const char *format, ...)
 	va_list args;
 	int i, count = 0;
 	int plus_flag, space_flag, hash_flag;
-	int length, width;
+	int length, width, precision;
 
 	if (format == NULL)
 		return (-1);
@@ -636,6 +752,19 @@ int _printf(const char *format, ...)
 			}
 		}
 
+		/* ---- precision ---- */
+		precision = -1;
+		if (format[i] == '.')
+		{
+			i++;
+			precision = 0;
+			while (format[i] >= '0' && format[i] <= '9')
+			{
+				precision = precision * 10 + (format[i] - '0');
+				i++;
+			}
+		}
+
 		/* ---- length modifier: l or h ---- */
 		length = 0;
 		if (format[i] == 'l')
@@ -660,24 +789,27 @@ int _printf(const char *format, ...)
 		if (format[i] == 'c')
 			count += print_char(args, width);
 		else if (format[i] == 's')
-			count += print_string(args, width);
+			count += print_string(args, width, precision);
 		else if (format[i] == 'S')
 			count += print_S(args);
 		else if (format[i] == '%')
 			count += print_percent(width);
 		else if (format[i] == 'd' || format[i] == 'i')
 			count += print_int(args, width, plus_flag,
-					   space_flag, length);
+					   space_flag, length, precision);
 		else if (format[i] == 'b')
 			count += print_binary(args);
 		else if (format[i] == 'u')
-			count += print_unsigned(args, width, length);
+			count += print_unsigned(args, width, length, precision);
 		else if (format[i] == 'o')
-			count += print_octal(args, width, hash_flag, length);
+			count += print_octal(args, width, hash_flag,
+					     length, precision);
 		else if (format[i] == 'x')
-			count += print_hex_lower(args, width, hash_flag, length);
+			count += print_hex_lower(args, width, hash_flag,
+						 length, precision);
 		else if (format[i] == 'X')
-			count += print_hex_upper(args, width, hash_flag, length);
+			count += print_hex_upper(args, width, hash_flag,
+						 length, precision);
 		else if (format[i] == 'p')
 			count += print_pointer(args, width);
 		else
