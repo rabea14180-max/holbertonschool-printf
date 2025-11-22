@@ -109,6 +109,8 @@ static int print_percent(int width, int minus_flag)
 	return (count);
 }
 
+/* ===================== custom helpers ===================== */
+
 /**
  * print_rev - prints a string in reverse order (%r)
  * @args: argument list
@@ -161,6 +163,123 @@ static int print_rot13(va_list args)
 		count += _putchar(ch);
 		i++;
 	}
+
+	return (count);
+}
+
+/**
+ * print_binary - prints an unsigned int in binary (%b)
+ * @args: argument list
+ *
+ * Return: number of printed characters
+ */
+static int print_binary(va_list args)
+{
+	unsigned int n = va_arg(args, unsigned int);
+	char buf[32];
+	int i = 0, digits, count = 0;
+
+	if (n == 0)
+	{
+		return (_putchar('0'));
+	}
+
+	while (n > 0)
+	{
+		buf[i++] = (char)('0' + (n & 1));
+		n >>= 1;
+	}
+	digits = i;
+
+	while (digits-- > 0)
+		count += _putchar(buf[digits]);
+
+	return (count);
+}
+
+/**
+ * print_S - prints a string, non printable as \xHH (%S)
+ * @args: argument list
+ *
+ * Return: number of printed characters
+ */
+static int print_S(va_list args)
+{
+	char *s;
+	unsigned char c;
+	int i = 0, count = 0;
+	int hi, lo;
+
+	s = va_arg(args, char *);
+	if (!s)
+		s = "(null)";
+
+	while (s[i])
+	{
+		c = (unsigned char)s[i];
+
+		if ((c > 0 && c < 32) || c >= 127)
+		{
+			count += _putchar('\\');
+			count += _putchar('x');
+
+			hi = c / 16;
+			lo = c % 16;
+
+			count += _putchar(hi < 10 ? '0' + hi : 'A' + (hi - 10));
+			count += _putchar(lo < 10 ? '0' + lo : 'A' + (lo - 10));
+		}
+		else
+		{
+			count += _putchar(c);
+		}
+		i++;
+	}
+
+	return (count);
+}
+
+/**
+ * print_pointer - prints a pointer value in hex (%p)
+ * @args: argument list
+ *
+ * Return: number of printed characters
+ */
+static int print_pointer(va_list args)
+{
+	void *ptr = va_arg(args, void *);
+	unsigned long n;
+	char buf[32];
+	int i = 0, digits, count = 0;
+
+	if (!ptr)
+	{
+		char *nil = "(nil)";
+
+		while (nil[i])
+			count += _putchar(nil[i++]);
+		return (count);
+	}
+
+	n = (unsigned long)ptr;
+
+	while (n > 0)
+	{
+		int d = n % 16;
+
+		if (d < 10)
+			buf[i++] = (char)('0' + d);
+		else
+			buf[i++] = (char)('a' + (d - 10));
+		n /= 16;
+	}
+	digits = i;
+
+	count += _putchar('0');
+	count += _putchar('x');
+
+	while (digits-- > 0)
+		count += _putchar(buf[digits]);
 
 	return (count);
 }
@@ -386,7 +505,7 @@ static int print_unsigned(va_list args, int width, int length, int precision,
 /* ======================= main _printf ======================= */
 
 /**
- * _printf - custom printf (tasks 0..15)
+ * _printf - custom printf (all tasks 0..16)
  * @format: format string
  *
  * Return: number of characters printed, or -1 on error
@@ -426,6 +545,7 @@ int _printf(const char *format, ...)
 		minus_flag = plus_flag = space_flag = zero_flag = hash_flag = 0;
 		length = 0;
 
+		/* ---------- flags ---------- */
 		while (format[i] == '-' || format[i] == '+' || format[i] == ' ' ||
 		       format[i] == '0' || format[i] == '#')
 		{
@@ -442,6 +562,7 @@ int _printf(const char *format, ...)
 			i++;
 		}
 
+		/* ---------- width ---------- */
 		if (format[i] == '*')
 		{
 			width = va_arg(args, int);
@@ -461,6 +582,7 @@ int _printf(const char *format, ...)
 			}
 		}
 
+		/* ---------- precision ---------- */
 		if (format[i] == '.')
 		{
 			i++;
@@ -482,18 +604,26 @@ int _printf(const char *format, ...)
 			}
 		}
 
+		/* ---------- length modifiers ---------- */
 		if (format[i] == 'l' || format[i] == 'h')
 		{
 			length = format[i];
 			i++;
 		}
 
+		/* ---------- specifier ---------- */
 		if (format[i] == 'c')
 			count += print_char(args, width, minus_flag);
 		else if (format[i] == 's')
 			count += print_string(args, width, precision, minus_flag);
 		else if (format[i] == '%')
 			count += print_percent(width, minus_flag);
+		else if (format[i] == 'b')
+			count += print_binary(args);
+		else if (format[i] == 'S')
+			count += print_S(args);
+		else if (format[i] == 'p')
+			count += print_pointer(args);
 		else if (format[i] == 'r')
 			count += print_rev(args);
 		else if (format[i] == 'R')
@@ -520,6 +650,7 @@ int _printf(const char *format, ...)
 						zero_flag, minus_flag);
 		else
 		{
+			/* unknown specifier: print '%' and the char */
 			count += _putchar('%');
 			count += _putchar(format[i]);
 		}
@@ -527,7 +658,7 @@ int _printf(const char *format, ...)
 		i++;
 	}
 
-	_putchar(-1);
+	_putchar(-1); /* flush buffer */
 	va_end(args);
 	return (count);
 }
